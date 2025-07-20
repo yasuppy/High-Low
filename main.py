@@ -4,6 +4,11 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import os
 from datetime import datetime
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.core.driver_cache import DriverCacheManager
 
 def generate_shin_ne_ashi_data(daily_df, length=5):
     """
@@ -164,6 +169,25 @@ def main():
         f.write("</body></html>")
 
     print(f"Analysis complete. Check '{output_file_path}'")
+
+    # webdriver-managerのキャッシュパスをプロジェクト内に設定
+    cache_path = os.path.join(os.getcwd(), "webdriver_cache")
+    os.makedirs(cache_path, exist_ok=True)
+    cache_manager = DriverCacheManager(cache_path)
+
+    # ヘッドレスモードでChromeをセットアップ
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox") # Recommended for running in restricted environments
+    chrome_options.add_argument("--disable-dev-shm-usage") # Overcomes limited resource problems
+
+    # webdriver-managerを使ってブラウザを起動し、生成したHTMLファイルを開く
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager(cache_manager=cache_manager).install()), options=chrome_options)
+    driver.get(f"file://{output_file_path}")
+    print(f"Successfully opened {output_file_path} in headless browser.")
+
+    driver.quit()
+
 
 if __name__ == '__main__':
     main()
